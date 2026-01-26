@@ -56,13 +56,14 @@ const syntaxRules = [
         }
     },
 
-    // 5. Select Dropdowns - Label: {Opt1, Opt2}
+    // 5. Select Dropdowns - Label: {Opt1, Opt2} "helper"
     {
         name: 'Select',
-        regex: /(.*):\s\{(.*)\}/,
+        regex: /(.*):\s\{(.*)\}\s*(?:"([^"]+)")?$/,
         render: (match, context) => {
             let rawLabel = match[1];
             const optionsString = match[2];
+            const customHelper = match[3] || '';
 
             // Extract helper text BEFORE inline parsing (to avoid **bold** interference)
             const { text, helperText } = extractHelperText(rawLabel);
@@ -81,7 +82,8 @@ const syntaxRules = [
 
             context.group = null; // Reset group context
 
-            const helperHTML = helperText ? `<div class="helper-text">${helperText}</div>` : '';
+            const finalHelper = customHelper || helperText;
+            const helperHTML = finalHelper ? `<div class="helper-text">${finalHelper}</div>` : '';
 
             return `
             <div class="form-group">
@@ -92,13 +94,14 @@ const syntaxRules = [
         }
     },
 
-    // 6. Textarea (Long Text) - Label: [[Placeholder]]
+    // 6. Textarea (Long Text) - Label: [[Placeholder]] "helper"
     {
         name: 'Textarea',
-        regex: /(.*):\s*\[\[(.*)\]\]/,
+        regex: /(.*):\s*\[\[(.*)\]\]\s*(?:"([^"]+)")?$/,
         render: (match, context) => {
             const { label, isReq } = parseLabel(match[1].trim());
             const placeholder = match[2];
+            const customHelper = match[3] || '';
             const name = getUniqueName(slugify(label), context);
             if (isReq) context.hasRequired = true;
             const reqAttr = isReq ? ' required' : '';
@@ -106,23 +109,27 @@ const syntaxRules = [
 
             context.group = null;
 
+            const helperHTML = customHelper ? `<div class="helper-text">${customHelper}</div>` : '';
+
             return `
             <div class="form-group">
                 <label for="${name}">${parseInline(label)}${reqStar}</label>
+                ${helperHTML}
                 <textarea id="${name}" name="${name}" placeholder="${placeholder}"${reqAttr}></textarea>
             </div>`;
         }
     },
 
-    // 7. Scale Question (Rating/Likert) - Label: |0-10| Start | Middle | End
+    // 7. Scale Question (Rating/Likert) - Label: |0-10| Start | Middle | End "helper"
     {
         name: 'Scale',
-        regex: /(.*):\s*\|(\d+)-(\d+)\|\s*(.*)/,
+        regex: /(.*):\s*\|(\d+)-(\d+)\|\s*([^"]*?)(?:\s*"([^"]+)")?$/,
         render: (match, context) => {
             const { label, isReq } = parseLabel(match[1].trim());
             const min = parseInt(match[2]);
             const max = parseInt(match[3]);
-            const labelsString = match[4].trim();
+            const labelsString = (match[4] || '').trim();
+            const customHelper = match[5] || '';
 
             // Parse labels (2 or 3 labels separated by |)
             const labels = labelsString.split('|').map(l => l.trim());
@@ -152,9 +159,12 @@ const syntaxRules = [
             }
             labelsHtml += `<span class="scale-label end">${endLabel}</span>`;
 
+            const helperHTML = customHelper ? `<div class="helper-text">${customHelper}</div>` : '';
+
             return `
             <div class="form-group scale-field">
                 <label>${parseInline(label)}${reqStar}</label>
+                ${helperHTML}
                 <div class="scale-container">
                     <div class="scale-options">${options}</div>
                     <div class="scale-labels">${labelsHtml}</div>
@@ -163,14 +173,29 @@ const syntaxRules = [
         }
     },
 
-    // 8. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
+    // 8. Text Inputs with Validation - Label: [Placeholder] ~min:8|"error" "helper"
     {
         name: 'Input',
         regex: /(.*):\s\[(.*?)\](.*)$/,
         render: (match, context) => {
             const rawLabel = match[1];
             const placeholder = match[2];
-            const validatorString = match[3]?.trim() || '';
+            let remainder = match[3]?.trim() || '';
+
+            // Extract helper text from end (quoted string not preceded by |)
+            let customHelper = '';
+            // Case 1: Just a quoted string (no validators)
+            const directHelperMatch = remainder.match(/^"([^"]+)"$/);
+            // Case 2: Quoted string at end after validators
+            const helperMatch = remainder.match(/\s+"([^"]+)"$/);
+
+            if (directHelperMatch) {
+                customHelper = directHelperMatch[1];
+                remainder = '';
+            } else if (helperMatch && !remainder.match(/\|"[^"]+"\s*$/)) {
+                customHelper = helperMatch[1];
+                remainder = remainder.slice(0, -helperMatch[0].length).trim();
+            }
 
             const { label, isReq } = parseLabel(rawLabel);
             const baseSlug = slugify(label);
@@ -187,11 +212,11 @@ const syntaxRules = [
 
             // Parse validation rules like ~min:8|"Must be 8 chars" ~max:20
             let dataValidate = '';
-            if (validatorString) {
+            if (remainder) {
                 const validators = [];
                 const validatorRegex = /~(\w+)(?::([^|~\s]+))?(?:\|"([^"]+)")?/g;
                 let vMatch;
-                while ((vMatch = validatorRegex.exec(validatorString)) !== null) {
+                while ((vMatch = validatorRegex.exec(remainder)) !== null) {
                     const vName = vMatch[1];
                     const vParam = vMatch[2] || '';
                     const vMsg = vMatch[3] || '';
@@ -212,20 +237,25 @@ const syntaxRules = [
                 ? ` placeholder="${placeholder}"`
                 : '';
 
+            const helperHTML = customHelper ? `<div class="helper-text">${customHelper}</div>` : '';
+
             return `
             <div class="form-group">
                 <label for="${name}">${parseInline(label)}${isReq ? '<span class="req-star">*</span>' : ''}</label>
+                ${helperHTML}
                 <input type="${type}" name="${name}" id="${name}"${placeholderAttr}${isReq ? ' required' : ''}${dataValidate}>
             </div>`;
         }
     },
 
-    // 9. Group Headers - Label: (Used for grouping radios)
+    // 9. Group Headers with Selection Limits - Label: (min:1, max:3) "custom helper" or Label:
     {
         name: 'GroupHeader',
-        regex: /(.*):$/, // Matches "Gender:" or "Pick One:"
+        regex: /(.*):\s*(?:\(([^)]+)\))?\s*(?:"([^"]+)")?$/, // Matches "Gender:" or "Interests: (min:2, max:4) "helper""
         render: (match, context) => {
             let rawLabel = match[1];
+            const limitsString = match[2] || '';
+            const customHelper = match[3] || '';
 
             // Extract helper text BEFORE inline parsing (to avoid **bold** interference)
             const { text, helperText } = extractHelperText(rawLabel);
@@ -233,18 +263,51 @@ const syntaxRules = [
             const { label, isReq } = parseLabel(text);
             if(isReq) context.hasRequired = true;
 
+            // Parse selection limits (min:N, max:N)
+            let minSelect = null;
+            let maxSelect = null;
+            if (limitsString) {
+                const minMatch = limitsString.match(/min:\s*(\d+)/);
+                const maxMatch = limitsString.match(/max:\s*(\d+)/);
+                if (minMatch) minSelect = parseInt(minMatch[1]);
+                if (maxMatch) maxSelect = parseInt(maxMatch[1]);
+            }
+
             // Generate unique name for this group (handles duplicate question labels)
             const baseSlug = slugify(label);
             const uniqueSlug = getUniqueName(baseSlug, context);
 
             // Set Context for next items (Radios/Checkboxes)
-            context.group = { slug: uniqueSlug, required: isReq };
+            context.group = { slug: uniqueSlug, required: isReq, minSelect, maxSelect };
             context.groupOpen = true; // Mark that we have an open group div
 
-            const helperHTML = helperText ? `<div class="helper-text">${helperText}</div>` : '';
+            // Build selection limit helper text
+            let limitHelper = '';
+            if (customHelper) {
+                // Custom helper overrides auto-generated
+                limitHelper = customHelper;
+            } else if (minSelect !== null && maxSelect !== null) {
+                limitHelper = `Select ${minSelect}-${maxSelect} options`;
+            } else if (minSelect !== null) {
+                limitHelper = `Select at least ${minSelect}`;
+            } else if (maxSelect !== null) {
+                limitHelper = `Select up to ${maxSelect}`;
+            }
+
+            // Combine existing helper text with limit helper
+            let fullHelper = helperText || '';
+            if (limitHelper) {
+                fullHelper = fullHelper ? `${fullHelper} (${limitHelper})` : limitHelper;
+            }
+            const helperHTML = fullHelper ? `<div class="helper-text">${fullHelper}</div>` : '';
+
+            // Build data attributes for selection limits
+            let dataAttrs = '';
+            if (minSelect !== null) dataAttrs += ` data-min-select="${minSelect}"`;
+            if (maxSelect !== null) dataAttrs += ` data-max-select="${maxSelect}"`;
 
             // Open the form-group div but don't close it (will be closed when group ends)
-            return `<div class="form-group"><label>${parseInline(label)}${isReq ? '<span class="req-star">*</span>' : ''}</label>${helperHTML}`;
+            return `<div class="form-group checkbox-group"${dataAttrs}><label>${parseInline(label)}${isReq ? '<span class="req-star">*</span>' : ''}</label>${helperHTML}`;
         }
     },
 

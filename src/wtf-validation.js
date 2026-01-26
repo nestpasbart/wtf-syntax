@@ -10,7 +10,9 @@
         phone: () => `Enter a valid phone number`,
         required: () => `This field is required`,
         email: () => `Enter a valid email`,
-        url: () => `Enter a valid URL`
+        url: () => `Enter a valid URL`,
+        minSelect: (param) => `Select at least ${param} option${param > 1 ? 's' : ''}`,
+        maxSelect: (param) => `Select at most ${param} option${param > 1 ? 's' : ''}`
     };
 
     // Validator functions (return true if valid)
@@ -89,6 +91,40 @@
         }
     }
 
+    // Show/hide error on a checkbox group container
+    function showGroupError(group, error) {
+        const existing = group.querySelector('.wtf-error');
+        if (existing) existing.remove();
+
+        group.classList.toggle('wtf-invalid', !!error);
+
+        if (error) {
+            const errorEl = document.createElement('div');
+            errorEl.className = 'wtf-error';
+            errorEl.textContent = error;
+            group.appendChild(errorEl);
+        }
+    }
+
+    // Validate checkbox group selection limits
+    function validateCheckboxGroup(group) {
+        const minSelect = group.dataset.minSelect ? parseInt(group.dataset.minSelect) : null;
+        const maxSelect = group.dataset.maxSelect ? parseInt(group.dataset.maxSelect) : null;
+
+        if (minSelect === null && maxSelect === null) return null;
+
+        const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+        if (minSelect !== null && checkedCount < minSelect) {
+            return defaultMessages.minSelect(minSelect);
+        }
+        if (maxSelect !== null && checkedCount > maxSelect) {
+            return defaultMessages.maxSelect(maxSelect);
+        }
+        return null;
+    }
+
     // Initialize validation on a form
     function initValidation(form) {
         // Prevent double-initialization
@@ -112,6 +148,18 @@
             });
         });
 
+        // Add live validation for checkbox groups
+        const checkboxGroups = form.querySelectorAll('.checkbox-group[data-min-select], .checkbox-group[data-max-select]');
+        checkboxGroups.forEach(group => {
+            const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const error = validateCheckboxGroup(group);
+                    showGroupError(group, error);
+                });
+            });
+        });
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -125,6 +173,14 @@
                 const errors = validateField(field, this);
                 showError(field, errors);
                 if (errors.length > 0) hasErrors = true;
+            });
+
+            // Validate checkbox groups with selection limits
+            const groups = this.querySelectorAll('.checkbox-group[data-min-select], .checkbox-group[data-max-select]');
+            groups.forEach(group => {
+                const error = validateCheckboxGroup(group);
+                showGroupError(group, error);
+                if (error) hasErrors = true;
             });
 
             if (hasErrors) {
