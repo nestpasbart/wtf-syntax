@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTF Script Test: Other Option</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 { margin: 0 0 20px 0; color: #1a1a2e; }
+        h2 { margin: 20px 0 10px 0; font-size: 1.1rem; color: #444; }
+        #test-results {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pass { color: #2e7d32; padding: 8px; margin: 4px 0; background: #e8f5e9; border-radius: 4px; }
+        .fail { color: #c62828; padding: 8px; margin: 4px 0; background: #ffebee; border-radius: 4px; }
+        .fail small { display: block; margin-top: 4px; color: #666; }
+        .test-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-container form { display: flex; flex-direction: column; gap: 12px; }
+        .test-container .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .test-container label { font-weight: 500; color: #333; }
+        .test-container .check-item label,
+        .test-container .radio-item label { cursor: pointer; }
+        .test-container .req-star { color: #e53935; margin-left: 2px; }
+        .test-container .check-item,
+        .test-container .radio-item { display: flex; align-items: center; gap: 8px; }
+        .test-container .other-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .test-container .other-option > input[type="checkbox"],
+        .test-container .other-option > input[type="radio"] {
+            flex-shrink: 0;
+        }
+        .test-container .other-option > label {
+            flex-shrink: 0;
+        }
+        .test-container .other-option .other-input {
+            flex: 1;
+            min-width: 120px;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .test-container .other-option .other-input:disabled {
+            opacity: 0.5;
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .test-container .other-option .other-input:not(:disabled) {
+            background: #fff;
+        }
+        .test-container .wtf-error { color: #e53935; font-size: 0.85rem; margin-top: 4px; }
+        .test-container .wtf-invalid { border-color: #e53935 !important; }
+        .source-code {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        .summary { font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .summary.all-pass { background: #e8f5e9; color: #2e7d32; }
+        .summary.has-fail { background: #ffebee; color: #c62828; }
+        .instruction { background: #e3f2fd; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>Testing: "Other" Option with Text Input</h1>
+
+    <div id="test-results">
+        <strong>Test Results:</strong>
+        <div id="results-list"></div>
+        <div id="summary" class="summary"></div>
+    </div>
+
+    <h2>Test Case 1: Checkbox with "Other" option</h2>
+    <div class="source-code">Interests:
+- [ ] Music
+- [ ] Sports
+- [?] Other</div>
+    <div class="instruction">Select "Other" and the text input should enable</div>
+    <div id="test1" class="test-container"></div>
+
+    <h2>Test Case 2: Checkbox with custom placeholder</h2>
+    <div class="source-code">How did you hear about us:
+- [ ] Google
+- [ ] Social Media
+- [?] Other [Please specify where]</div>
+    <div class="instruction">Check "Other" - placeholder should be "Please specify where"</div>
+    <div id="test2" class="test-container"></div>
+
+    <h2>Test Case 3: Radio with "Other" option</h2>
+    <div class="source-code">Gender*:
+- ( ) Male
+- ( ) Female
+- (?) Other</div>
+    <div class="instruction">Select "Other" radio - text input enables. Select another option - it disables.</div>
+    <div id="test3" class="test-container"></div>
+
+    <h2>Test Case 4: Radio with custom placeholder</h2>
+    <div class="source-code">Favorite Color:
+- ( ) Red
+- ( ) Blue
+- ( ) Green
+- (?) Other [Enter your favorite color]</div>
+    <div class="instruction">Radio "Other" with custom placeholder</div>
+    <div id="test4" class="test-container"></div>
+
+    <h2>Test Case 5: Multiple groups with "Other"</h2>
+    <div class="source-code">Skills: (min:1)
+- [ ] JavaScript
+- [ ] Python
+- [?] Other [Specify skill]
+
+Languages:
+- [ ] English
+- [ ] Spanish
+- [?] Other</div>
+    <div class="instruction">Multiple groups each with their own "Other" option</div>
+    <div id="test5" class="test-container"></div>
+
+    <!-- Load WTF Script modules -->
+    <script src="../src/helpers.js"></script>
+    <script src="../src/rules.js"></script>
+    <script src="../src/syntax.js"></script>
+    <script src="../src/wtf-validation.js"></script>
+    <script>
+        const results = [];
+        let engine;
+
+        try {
+            engine = new WTFScriptEngine(syntaxRules);
+        } catch (e) {
+            console.error('Failed to load engine:', e);
+            document.getElementById('results-list').innerHTML =
+                `<div class="fail">Engine failed to load: ${e.message}</div>`;
+        }
+
+        function runTest(name, input, assertions) {
+            try {
+                const output = engine.parse(input);
+                for (const assertion of assertions) {
+                    const passed = assertion.test(output);
+                    results.push({
+                        name: `${name}: ${assertion.desc}`,
+                        passed,
+                        error: passed ? null : `Expected: ${assertion.desc}`
+                    });
+                }
+                return output;
+            } catch (e) {
+                results.push({ name, passed: false, error: e.message });
+                return `<div class="error">${e.message}</div>`;
+            }
+        }
+
+        // Test 1: Basic checkbox "Other"
+        const output1 = runTest('Test 1: Basic checkbox Other', `Interests:
+- [ ] Music
+- [ ] Sports
+- [?] Other`, [
+            { desc: 'Has other-option class', test: (o) => o.includes('other-option') },
+            { desc: 'Has data-other-toggle attribute', test: (o) => o.includes('data-other-toggle') },
+            { desc: 'Has other-input class', test: (o) => o.includes('other-input') },
+            { desc: 'Input is disabled by default', test: (o) => o.includes('disabled') },
+            { desc: 'Has default placeholder', test: (o) => o.includes('Please specify...') }
+        ]);
+        document.getElementById('test1').innerHTML = output1;
+
+        // Test 2: Checkbox with custom placeholder
+        const output2 = runTest('Test 2: Custom placeholder', `How did you hear about us:
+- [ ] Google
+- [ ] Social Media
+- [?] Other [Please specify where]`, [
+            { desc: 'Has custom placeholder', test: (o) => o.includes('Please specify where') },
+            { desc: 'Has other-option class', test: (o) => o.includes('other-option') }
+        ]);
+        document.getElementById('test2').innerHTML = output2;
+
+        // Test 3: Radio "Other"
+        const output3 = runTest('Test 3: Radio Other', `Gender*:
+- ( ) Male
+- ( ) Female
+- (?) Other`, [
+            { desc: 'Has radio-item with other-option', test: (o) => o.includes('radio-item other-option') },
+            { desc: 'Has radio input with data-other-toggle', test: (o) => /type="radio".*data-other-toggle/.test(o) },
+            { desc: 'Has other-input', test: (o) => o.includes('other-input') },
+            { desc: 'Radio value is "other"', test: (o) => o.includes('value="other"') }
+        ]);
+        document.getElementById('test3').innerHTML = output3;
+
+        // Test 4: Radio with custom placeholder
+        const output4 = runTest('Test 4: Radio custom placeholder', `Favorite Color:
+- ( ) Red
+- ( ) Blue
+- ( ) Green
+- (?) Other [Enter your favorite color]`, [
+            { desc: 'Has custom placeholder', test: (o) => o.includes('Enter your favorite color') },
+            { desc: 'Has 4 radio options total', test: (o) => (o.match(/type="radio"/g) || []).length === 4 }
+        ]);
+        document.getElementById('test4').innerHTML = output4;
+
+        // Test 5: Multiple groups
+        const output5 = runTest('Test 5: Multiple groups', `Skills: (min:1)
+- [ ] JavaScript
+- [ ] Python
+- [?] Other [Specify skill]
+
+Languages:
+- [ ] English
+- [ ] Spanish
+- [?] Other`, [
+            { desc: 'Has two other-option elements', test: (o) => (o.match(/other-option/g) || []).length >= 2 },
+            { desc: 'Has skills_other name', test: (o) => o.includes('name="skills_other"') },
+            { desc: 'Has languages_other name', test: (o) => o.includes('name="languages_other"') }
+        ]);
+        document.getElementById('test5').innerHTML = output5;
+
+        // Initialize validation on all rendered forms
+        document.querySelectorAll('.test-container form').forEach(form => {
+            if (window.WTFValidation) {
+                window.WTFValidation.init(form);
+            }
+        });
+
+        // Display results
+        const resultsHtml = results.map(r =>
+            `<div class="${r.passed ? 'pass' : 'fail'}">
+                ${r.passed ? '✅' : '❌'} ${r.name}
+                ${r.error && !r.passed ? `<small>${r.error}</small>` : ''}
+            </div>`
+        ).join('');
+        document.getElementById('results-list').innerHTML = resultsHtml;
+
+        // Summary
+        const passed = results.filter(r => r.passed).length;
+        const total = results.length;
+        document.getElementById('summary').innerHTML = `${passed}/${total} tests passed`;
+        document.getElementById('summary').className = `summary ${passed === total ? 'all-pass' : 'has-fail'}`;
+
+        // Console summary
+        console.log(`\n=== OTHER OPTION TEST RESULTS: ${passed}/${total} passed ===\n`);
+        results.forEach(r => console.log(r.passed ? `✅ ${r.name}` : `❌ ${r.name}: ${r.error || 'FAILED'}`));
+    </script>
+</body>
+</html>

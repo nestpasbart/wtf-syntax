@@ -106,6 +106,45 @@
         }
     }
 
+    // Initialize "Other" option toggle behavior
+    function initOtherOptions(form) {
+        // Handle checkbox "Other" options
+        form.querySelectorAll('.other-option input[type="checkbox"][data-other-toggle]').forEach(checkbox => {
+            const textInput = checkbox.parentNode.querySelector('.other-input');
+            if (!textInput) return;
+
+            checkbox.addEventListener('change', () => {
+                textInput.disabled = !checkbox.checked;
+                if (!checkbox.checked) {
+                    textInput.value = '';
+                } else {
+                    textInput.focus();
+                }
+            });
+        });
+
+        // Handle radio "Other" options - need to watch all radios in the same group
+        form.querySelectorAll('.other-option input[type="radio"][data-other-toggle]').forEach(otherRadio => {
+            const textInput = otherRadio.parentNode.querySelector('.other-input');
+            if (!textInput) return;
+
+            const radioName = otherRadio.name;
+            const allRadios = form.querySelectorAll(`input[type="radio"][name="${radioName}"]`);
+
+            allRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const isOtherSelected = otherRadio.checked;
+                    textInput.disabled = !isOtherSelected;
+                    if (!isOtherSelected) {
+                        textInput.value = '';
+                    } else {
+                        textInput.focus();
+                    }
+                });
+            });
+        });
+    }
+
     // Validate checkbox group selection limits
     function validateCheckboxGroup(group) {
         const minSelect = group.dataset.minSelect ? parseInt(group.dataset.minSelect) : null;
@@ -159,6 +198,9 @@
                 });
             });
         });
+
+        // Handle "Other" option toggles
+        initOtherOptions(form);
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();

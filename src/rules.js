@@ -19,7 +19,56 @@ const syntaxRules = [
         render: (match) => `<button type="submit" class="form-btn">${match[1]}</button>`
     },
 
-    // 3. Checkboxes - [ ] Label
+    // 3. Other Checkbox - [?] Label [placeholder]
+    {
+        name: 'OtherCheckbox',
+        regex: /^-\s\[\?\]\s(.*)$/,
+        render: (match, context) => {
+            const rest = match[1];
+            // Parse label and optional placeholder: "Other [Please specify]" or just "Other"
+            const placeholderMatch = rest.match(/^(.+?)\s+\[([^\]]+)\]$/);
+            const label = placeholderMatch ? placeholderMatch[1] : rest;
+            const placeholder = placeholderMatch ? placeholderMatch[2] : 'Please specify...';
+
+            const name = context.group ? context.group.slug + '[]' : slugify(label);
+            const textName = context.group ? context.group.slug + '_other' : slugify(label) + '_other';
+            const id = (context.group ? context.group.slug : '') + '_' + slugify(label);
+
+            return `
+            <div class="check-item other-option">
+                <input type="checkbox" name="${name}" id="${id}" value="other" data-other-toggle>
+                <label for="${id}">${parseInline(label)}</label>
+                <input type="text" name="${textName}" class="other-input" placeholder="${placeholder}" disabled>
+            </div>`;
+        }
+    },
+
+    // 4. Other Radio - (?) Label [placeholder]
+    {
+        name: 'OtherRadio',
+        regex: /^-\s\(\?\)\s(.*)$/,
+        render: (match, context) => {
+            const rest = match[1];
+            // Parse label and optional placeholder
+            const placeholderMatch = rest.match(/^(.+?)\s+\[([^\]]+)\]$/);
+            const label = placeholderMatch ? placeholderMatch[1] : rest;
+            const placeholder = placeholderMatch ? placeholderMatch[2] : 'Please specify...';
+
+            const name = context.group ? context.group.slug : 'radio_group';
+            const textName = context.group ? context.group.slug + '_other' : 'radio_group_other';
+            const req = (context.group && context.group.required) ? 'required' : '';
+            const id = (context.group ? context.group.slug : 'radio') + '_' + slugify(label);
+
+            return `
+            <div class="radio-item other-option">
+                <input type="radio" name="${name}" id="${id}" value="other" ${req} data-other-toggle>
+                <label for="${id}">${parseInline(label)}</label>
+                <input type="text" name="${textName}" class="other-input" placeholder="${placeholder}" disabled>
+            </div>`;
+        }
+    },
+
+    // 5. Checkboxes - [ ] Label
     {
         name: 'Checkbox',
         regex: /^-\s\[(x|\s)\]\s(.*)/,
@@ -28,16 +77,17 @@ const syntaxRules = [
             const label = match[2];
             // Uses the last group label seen (context.group) or a slug of the label
             const name = context.group ? context.group.slug + '[]' : slugify(label);
+            const id = (context.group ? context.group.slug : '') + '_' + slugify(label);
 
             return `
             <div class="check-item">
-                <input type="checkbox" name="${name}" ${checked}>
-                <label>${parseInline(label)}</label>
+                <input type="checkbox" name="${name}" id="${id}" ${checked}>
+                <label for="${id}">${parseInline(label)}</label>
             </div>`;
         }
     },
 
-    // 4. Radio Buttons - ( ) Label
+    // 6. Radio Buttons - ( ) Label
     {
         name: 'Radio',
         regex: /^-\s\((x|\s)\)\s(.*)/,
@@ -47,16 +97,17 @@ const syntaxRules = [
             // Radios need a group name to work (toggling). Defaults to 'radio_group' if no header found.
             const name = context.group ? context.group.slug : 'radio_group';
             const req = (context.group && context.group.required) ? 'required' : '';
+            const id = (context.group ? context.group.slug : 'radio') + '_' + slugify(label);
 
             return `
             <div class="radio-item">
-                <input type="radio" name="${name}" value="${label}" ${checked} ${req}>
-                <label>${parseInline(label)}</label>
+                <input type="radio" name="${name}" id="${id}" value="${label}" ${checked} ${req}>
+                <label for="${id}">${parseInline(label)}</label>
             </div>`;
         }
     },
 
-    // 5. Select Dropdowns - Label: {Opt1, Opt2} "helper"
+    // 7. Select Dropdowns - Label: {Opt1, Opt2} "helper"
     {
         name: 'Select',
         regex: /(.*):\s\{(.*)\}\s*(?:"([^"]+)")?$/,
@@ -94,7 +145,7 @@ const syntaxRules = [
         }
     },
 
-    // 6. Textarea (Long Text) - Label: [[Placeholder]] "helper"
+    // 8. Textarea (Long Text) - Label: [[Placeholder]] "helper"
     {
         name: 'Textarea',
         regex: /(.*):\s*\[\[(.*)\]\]\s*(?:"([^"]+)")?$/,
@@ -120,7 +171,7 @@ const syntaxRules = [
         }
     },
 
-    // 7. Scale Question (Rating/Likert) - Label: |0-10| Start | Middle | End "helper"
+    // 9. Scale Question (Rating/Likert) - Label: |0-10| Start | Middle | End "helper"
     {
         name: 'Scale',
         regex: /(.*):\s*\|(\d+)-(\d+)\|\s*([^"]*?)(?:\s*"([^"]+)")?$/,
@@ -173,7 +224,7 @@ const syntaxRules = [
         }
     },
 
-    // 8. Text Inputs with Validation - Label: [Placeholder] ~min:8|"error" "helper"
+    // 10. Text Inputs with Validation - Label: [Placeholder] ~min:8|"error" "helper"
     {
         name: 'Input',
         regex: /(.*):\s\[(.*?)\](.*)$/,
@@ -248,7 +299,7 @@ const syntaxRules = [
         }
     },
 
-    // 9. Group Headers with Selection Limits - Label: (min:1, max:3) "custom helper" or Label:
+    // 11. Group Headers with Selection Limits - Label: (min:1, max:3) "custom helper" or Label:
     {
         name: 'GroupHeader',
         regex: /(.*):\s*(?:\(([^)]+)\))?\s*(?:"([^"]+)")?$/, // Matches "Gender:" or "Interests: (min:2, max:4) "helper""
@@ -311,21 +362,21 @@ const syntaxRules = [
         }
     },
 
-    // 10. Standard Lists - Item
+    // 12. Standard Lists - Item
     {
         name: 'List',
         regex: /^-\s(.*)/,
         render: (match) => `<li>${parseInline(match[1])}</li>`
     },
 
-    // 11. Divider line
+    // 13. Divider line
     {
         name: 'Divide',
         regex: /^-{3,}$/,
         render: (match) => `<p class="dividerline"></p>`
     },
 
-    // 12. Link Line (Custom Syntax)
+    // 14. Link Line (Custom Syntax)
     {
         name: 'Link',
         // Matches: Text + space + <"url">
