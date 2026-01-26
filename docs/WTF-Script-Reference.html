@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTF Script Reference Guide</title>
+    <style>
+        @page {
+            margin: 2cm;
+            size: A4;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.2rem;
+            color: #1a1a2e;
+            border-bottom: 3px solid #4a9eff;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 1.5rem;
+            color: #1a1a2e;
+            margin-top: 2.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 1.15rem;
+            color: #333;
+            margin-top: 1.5rem;
+            page-break-after: avoid;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #4a9eff;
+            margin: 2rem 0;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+        pre {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 15px 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            page-break-inside: avoid;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            page-break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+            padding: 0;
+            font-size: 1.2rem;
+        }
+        .toc ol {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #4a9eff;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .section-number {
+            color: #4a9eff;
+            font-weight: 600;
+        }
+        p {
+            margin: 1rem 0;
+        }
+        strong {
+            color: #1a1a2e;
+        }
+        .example-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 5px;
+        }
+        .quick-ref {
+            background: #f0f7ff;
+            border: 1px solid #4a9eff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 2rem 0;
+        }
+        .quick-ref h2 {
+            margin-top: 0;
+            border: none;
+            padding: 0;
+            color: #1a1a2e;
+        }
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+            h2 {
+                page-break-after: avoid;
+            }
+            pre, table {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>WTF Script Reference Guide</h1>
+<p>A complete reference for WTF Script - a markdown-based DSL for creating HTML forms.</p>
+
+<div class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+        <li><a href="#structure">Document Structure</a></li>
+        <li><a href="#text-inputs">Text Input Fields</a></li>
+        <li><a href="#selection">Selection Fields</a></li>
+        <li><a href="#choice-groups">Choice Groups</a></li>
+        <li><a href="#long-text">Long Text &amp; Scale</a></li>
+        <li><a href="#multi-step">Multi-Step Forms</a></li>
+        <li><a href="#formatting">Text Formatting</a></li>
+        <li><a href="#validation">Validation</a></li>
+    </ol>
+</div>
+
+<hr>
+
+<h2 id="structure"><span class="section-number">1.</span> Document Structure</h2>
+
+<h3>Frontmatter (Optional)</h3>
+<p>Add metadata at the top of your document using YAML-style frontmatter:</p>
+<pre><code>---
+title: My Form Title
+description: A brief description
+---</code></pre>
+
+<h3>Headers</h3>
+<p>Use markdown-style headers for section titles:</p>
+<pre><code># Main Title
+## Section Title
+### Subsection</code></pre>
+
+<h3>Divider Line</h3>
+<p>Create a horizontal divider with three or more dashes:</p>
+<pre><code>---</code></pre>
+
+<h3>Links</h3>
+<p>Add clickable links that open in a new tab:</p>
+<pre><code>Read our Privacy Policy &lt;"https://example.com/privacy"&gt;</code></pre>
+
+<hr>
+
+<h2 id="text-inputs"><span class="section-number">2.</span> Text Input Fields</h2>
+
+<h3>Basic Text Input</h3>
+<pre><code>Label: [placeholder text]</code></pre>
+<p class="example-label">Example:</p>
+<pre><code>Name: [Enter your full name]</code></pre>
+
+<h3>Required Fields</h3>
+<p>Add an asterisk (<code>*</code>) after the label to make a field required:</p>
+<pre><code>Email*: [you@example.com]</code></pre>
+
+<h3>Smart Type Detection</h3>
+<p>The parser automatically detects input types based on placeholder or label:</p>
+<table>
+    <tr><th>Placeholder/Label Contains</th><th>Input Type</th></tr>
+    <tr><td><code>@</code> symbol</td><td>email</td></tr>
+    <tr><td><code>***</code></td><td>password</td></tr>
+    <tr><td><code>date</code></td><td>date</td></tr>
+    <tr><td><code>phone</code> or <code>tel</code></td><td>tel</td></tr>
+    <tr><td><code>http</code> or <code>url</code> or <code>website</code></td><td>url</td></tr>
+</table>
+
+<p class="example-label">Examples:</p>
+<pre><code>Email*: [you@example.com]          → type="email"
+Password*: [***]                   → type="password"
+Birthday: [date]                   → type="date"
+Phone: [Your phone number]         → type="tel"
+Website: [https://...]             → type="url"</code></pre>
+
+<h3>Helper Text</h3>
+<p>Add helper text in quotes after the field:</p>
+<pre><code>Username*: [Choose a username] "Must be 3-20 characters"</code></pre>
+
+<hr>
+
+<h2 id="selection"><span class="section-number">3.</span> Selection Fields</h2>
+
+<h3>Dropdown Select</h3>
+<p>Use curly braces for dropdown options:</p>
+<pre><code>Country: {USA, Canada, Mexico}</code></pre>
+
+<h3>Pre-selected Option</h3>
+<p>Mark the default option with an asterisk:</p>
+<pre><code>Department: {Sales, *Support, Engineering}</code></pre>
+
+<h3>Required Dropdown</h3>
+<pre><code>Priority*: {Low, Medium, High}</code></pre>
+
+<h3>With Helper Text</h3>
+<pre><code>Status: {Active, Inactive} "Choose your current status"</code></pre>
+
+<hr>
+
+<h2 id="choice-groups"><span class="section-number">4.</span> Choice Groups</h2>
+
+<h3>Checkboxes</h3>
+<p>Use <code>- [ ]</code> for unchecked and <code>- [x]</code> for pre-checked:</p>
+<pre><code>Interests:
+- [ ] Technology
+- [ ] Design
+- [x] Marketing
+- [ ] Finance</code></pre>
+
+<h3>Radio Buttons</h3>
+<p>Use <code>- ( )</code> for unselected and <code>- (x)</code> for pre-selected:</p>
+<pre><code>Gender*:
+- ( ) Male
+- ( ) Female
+- (x) Prefer not to say</code></pre>
+
+<h3>"Other" Option with Text Input</h3>
+<p>Add a free-text option for checkboxes or radios:</p>
+<p><strong>Checkbox with Other:</strong></p>
+<pre><code>How did you hear about us:
+- [ ] Google
+- [ ] Social Media
+- [?] Other [Please specify]</code></pre>
+
+<p><strong>Radio with Other:</strong></p>
+<pre><code>Preferred Contact:
+- ( ) Email
+- ( ) Phone
+- (?) Other [Enter your preference]</code></pre>
+
+<h3>Selection Limits</h3>
+<p>Set minimum and maximum selection counts for checkbox groups:</p>
+<pre><code>Skills: (min:2, max:5)
+- [ ] JavaScript
+- [ ] Python
+- [ ] Go
+- [ ] Rust
+- [ ] Java
+- [ ] C++</code></pre>
+
+<p><strong>Options:</strong></p>
+<ul>
+    <li><code>(min:N)</code> - Require at least N selections</li>
+    <li><code>(max:N)</code> - Allow at most N selections</li>
+    <li><code>(min:N, max:M)</code> - Require between N and M selections</li>
+</ul>
+
+<h3>Custom Helper Text for Groups</h3>
+<pre><code>Toppings: (max:3) "Select up to 3 toppings"
+- [ ] Pepperoni
+- [ ] Mushrooms
+- [ ] Onions
+- [ ] Peppers</code></pre>
+
+<hr>
+
+<h2 id="long-text"><span class="section-number">5.</span> Long Text &amp; Scale</h2>
+
+<h3>Textarea (Multi-line Text)</h3>
+<p>Use double brackets for textarea fields:</p>
+<pre><code>Comments: [[Enter your comments here]]</code></pre>
+
+<p><strong>Required with Helper:</strong></p>
+<pre><code>Bio*: [[Tell us about yourself]] "Maximum 500 characters"</code></pre>
+
+<h3>Scale / Rating (Likert)</h3>
+<p>Create rating scales with the pipe syntax:</p>
+<pre><code>Satisfaction*: |1-5| Very Dissatisfied | Neutral | Very Satisfied</code></pre>
+
+<p><strong>Syntax:</strong> <code>Label: |min-max| Start Label | Middle Label | End Label</code></p>
+
+<p class="example-label">Examples:</p>
+<pre><code>Rating: |1-10| Poor | Average | Excellent
+
+Likelihood: |0-5| Not Likely | Very Likely
+
+Recommendation*: |0-10| Not at all likely | Extremely likely "NPS Question"</code></pre>
+
+<hr>
+
+<h2 id="multi-step"><span class="section-number">6.</span> Multi-Step Forms</h2>
+
+<h3>Defining Steps</h3>
+<p>Use triple equals to define form steps:</p>
+<pre><code>=== Step 1: Personal Info ===
+
+Name*: [Your name]
+Email*: [you@example.com]
+
+=== Step 2: Preferences ===
+
+Department: {Sales, Support, Engineering}
+
+=== Step 3: Confirm ===
+
+- [x] I agree to the terms</code></pre>
+
+<h3>Features</h3>
+<ul>
+    <li><strong>Progress Bar</strong> - Visual indicator showing completion progress</li>
+    <li><strong>Navigation</strong> - Previous/Next buttons with chevrons (&#8249; &#8250;)</li>
+    <li><strong>Per-step Validation</strong> - Required fields validated before proceeding</li>
+    <li><strong>Submit on Last Step</strong> - Final step shows Submit button</li>
+</ul>
+
+<hr>
+
+<h2 id="formatting"><span class="section-number">7.</span> Text Formatting</h2>
+
+<h3>Inline Formatting</h3>
+<p>Format text within labels and content:</p>
+<table>
+    <tr><th>Syntax</th><th>Result</th></tr>
+    <tr><td><code>**bold**</code></td><td><strong>bold</strong></td></tr>
+    <tr><td><code>__italic__</code></td><td><em>italic</em></td></tr>
+    <tr><td><code>~~strikethrough~~</code></td><td><del>strikethrough</del></td></tr>
+</table>
+
+<p class="example-label">Example:</p>
+<pre><code>**Important**: Please fill out all required fields.</code></pre>
+
+<h3>Plain Text / Paragraphs</h3>
+<p>Any line that doesn't match a specific pattern becomes a paragraph:</p>
+<pre><code>Welcome to our survey!
+
+Please answer the following questions honestly.</code></pre>
+
+<h3>Submit Button</h3>
+<p>Create a custom submit button:</p>
+<pre><code>[Submit My Response]</code></pre>
+
+<hr>
+
+<h2 id="validation"><span class="section-number">8.</span> Validation</h2>
+
+<h3>Built-in Validators</h3>
+<p>Add validation rules with the tilde (<code>~</code>) syntax:</p>
+<pre><code>Password*: [***] ~min:8 ~max:32</code></pre>
+
+<h3>Available Validators</h3>
+<table>
+    <tr><th>Validator</th><th>Description</th><th>Example</th></tr>
+    <tr><td><code>~min:N</code></td><td>Minimum N characters</td><td><code>~min:8</code></td></tr>
+    <tr><td><code>~max:N</code></td><td>Maximum N characters</td><td><code>~max:100</code></td></tr>
+    <tr><td><code>~match:fieldname</code></td><td>Must match another field</td><td><code>~match:password</code></td></tr>
+    <tr><td><code>~phone</code></td><td>Valid phone number format</td><td><code>~phone</code></td></tr>
+</table>
+
+<h3>Custom Error Messages</h3>
+<p>Add custom error messages with pipe syntax:</p>
+<pre><code>Password*: [***] ~min:8|"Password must be at least 8 characters"</code></pre>
+
+<h3>Combining Validators</h3>
+<pre><code>Username*: [username] ~min:3 ~max:20|"Username must be 3-20 characters"</code></pre>
+
+<h3>Automatic Validation</h3>
+<p>These are validated automatically based on input type:</p>
+<ul>
+    <li><strong>Required fields</strong> - Shows "This field is required"</li>
+    <li><strong>Email fields</strong> - Shows "Enter a valid email"</li>
+    <li><strong>URL fields</strong> - Shows "Enter a valid URL"</li>
+</ul>
+
+<hr>
+
+<div class="quick-ref">
+    <h2>Quick Reference Card</h2>
+
+    <h3>Input Types</h3>
+    <table>
+        <tr><th>Syntax</th><th>Output</th></tr>
+        <tr><td><code>Label: [placeholder]</code></td><td>Text input</td></tr>
+        <tr><td><code>Label*: [placeholder]</code></td><td>Required text input</td></tr>
+        <tr><td><code>Label: [[placeholder]]</code></td><td>Textarea</td></tr>
+        <tr><td><code>Label: {A, B, C}</code></td><td>Dropdown select</td></tr>
+        <tr><td><code>Label: {A, *B, C}</code></td><td>Dropdown with B selected</td></tr>
+        <tr><td><code>Label: |1-5| Low | High</code></td><td>Rating scale</td></tr>
+    </table>
+
+    <h3>Choice Groups</h3>
+    <table>
+        <tr><th>Syntax</th><th>Output</th></tr>
+        <tr><td><code>- [ ] Option</code></td><td>Unchecked checkbox</td></tr>
+        <tr><td><code>- [x] Option</code></td><td>Checked checkbox</td></tr>
+        <tr><td><code>- [?] Other [placeholder]</code></td><td>Checkbox with text input</td></tr>
+        <tr><td><code>- ( ) Option</code></td><td>Unselected radio</td></tr>
+        <tr><td><code>- (x) Option</code></td><td>Selected radio</td></tr>
+        <tr><td><code>- (?) Other [placeholder]</code></td><td>Radio with text input</td></tr>
+    </table>
+
+    <h3>Structure</h3>
+    <table>
+        <tr><th>Syntax</th><th>Output</th></tr>
+        <tr><td><code># Title</code></td><td>H1 heading</td></tr>
+        <tr><td><code>## Title</code></td><td>H2 heading</td></tr>
+        <tr><td><code>---</code></td><td>Horizontal divider</td></tr>
+        <tr><td><code>=== Step Title ===</code></td><td>Multi-step separator</td></tr>
+        <tr><td><code>[Button Text]</code></td><td>Submit button</td></tr>
+        <tr><td><code>Text &lt;"url"&gt;</code></td><td>Link (opens in new tab)</td></tr>
+    </table>
+
+    <h3>Validation</h3>
+    <table>
+        <tr><th>Syntax</th><th>Output</th></tr>
+        <tr><td><code>~min:N</code></td><td>Minimum length</td></tr>
+        <tr><td><code>~max:N</code></td><td>Maximum length</td></tr>
+        <tr><td><code>~match:field</code></td><td>Match another field</td></tr>
+        <tr><td><code>~phone</code></td><td>Phone number format</td></tr>
+        <tr><td><code>~rule|"message"</code></td><td>Custom error message</td></tr>
+    </table>
+</div>
+
+<hr>
+
+<h2>Complete Example</h2>
+
+<pre><code>---
+title: Job Application
+---
+
+# Apply for a Position
+
+=== Step 1: Personal Information ===
+
+**Please provide your contact details.**
+
+Full Name*: [John Doe]
+Email*: [you@example.com]
+Phone: [Your phone number]
+
+=== Step 2: Experience ===
+
+Position*: {Junior Developer, Senior Developer, Lead Developer}
+
+Years of Experience: |0-10| None | 5 years | 10+ years
+
+Skills: (min:1, max:5) "Select 1-5 skills"
+- [ ] JavaScript
+- [ ] Python
+- [ ] Java
+- [ ] Go
+- [?] Other [Specify skill]
+
+=== Step 3: Additional Info ===
+
+Cover Letter*: [[Tell us why you're a great fit...]]
+
+How did you hear about us:
+- ( ) LinkedIn
+- ( ) Job Board
+- ( ) Referral
+- (?) Other [Please specify]
+
+- [x] I agree to the privacy policy
+
+[Submit Application]</code></pre>
+
+<footer>
+    <p><strong>WTF Script</strong> - What The Form Script<br>
+    Version 1.0</p>
+</footer>
+
+</body>
+</html>
