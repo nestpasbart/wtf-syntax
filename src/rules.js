@@ -92,7 +92,29 @@ const syntaxRules = [
         }
     },
 
-    // 6. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
+    // 6. Textarea (Long Text) - Label: [[Placeholder]]
+    {
+        name: 'Textarea',
+        regex: /(.*):\s*\[\[(.*)\]\]/,
+        render: (match, context) => {
+            const { label, isReq } = parseLabel(match[1].trim());
+            const placeholder = match[2];
+            const name = getUniqueName(slugify(label), context);
+            if (isReq) context.hasRequired = true;
+            const reqAttr = isReq ? ' required' : '';
+            const reqStar = isReq ? '<span class="req-star">*</span>' : '';
+
+            context.group = null;
+
+            return `
+            <div class="form-group">
+                <label for="${name}">${parseInline(label)}${reqStar}</label>
+                <textarea id="${name}" name="${name}" placeholder="${placeholder}"${reqAttr}></textarea>
+            </div>`;
+        }
+    },
+
+    // 7. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
     {
         name: 'Input',
         regex: /(.*):\s\[(.*?)\](.*)$/,
@@ -149,7 +171,7 @@ const syntaxRules = [
         }
     },
 
-    // 7. Group Headers - Label: (Used for grouping radios)
+    // 8. Group Headers - Label: (Used for grouping radios)
     {
         name: 'GroupHeader',
         regex: /(.*):$/, // Matches "Gender:" or "Pick One:"
@@ -177,21 +199,21 @@ const syntaxRules = [
         }
     },
 
-    // 8. Standard Lists - Item
+    // 9. Standard Lists - Item
     {
         name: 'List',
         regex: /^-\s(.*)/,
         render: (match) => `<li>${parseInline(match[1])}</li>`
     },
 
-    // 9. Divider line
+    // 10. Divider line
     {
         name: 'Divide',
         regex: /^-{3,}$/,
         render: (match) => `<p class="dividerline"></p>`
     },
 
-    // 10. Link Line (Custom Syntax)
+    // 11. Link Line (Custom Syntax)
     {
         name: 'Link',
         // Matches: Text + space + <"url">

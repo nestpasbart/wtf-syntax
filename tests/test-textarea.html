@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTF Script Test: Textarea</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            margin: 0 0 20px 0;
+            color: #1a1a2e;
+        }
+        h2 {
+            margin: 20px 0 10px 0;
+            font-size: 1.1rem;
+            color: #444;
+        }
+        #test-results {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pass {
+            color: #2e7d32;
+            padding: 8px;
+            margin: 4px 0;
+            background: #e8f5e9;
+            border-radius: 4px;
+        }
+        .fail {
+            color: #c62828;
+            padding: 8px;
+            margin: 4px 0;
+            background: #ffebee;
+            border-radius: 4px;
+        }
+        .fail small {
+            display: block;
+            margin-top: 4px;
+            color: #666;
+        }
+        .test-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .test-container .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .test-container textarea {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .test-container label {
+            font-weight: 500;
+        }
+        .test-container .req-star {
+            color: #e53935;
+            margin-left: 2px;
+        }
+        .source-code {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .summary.all-pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .summary.has-fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <h1>Testing: Textarea (Long Text)</h1>
+
+    <div id="test-results">
+        <strong>Test Results:</strong>
+        <div id="results-list"></div>
+        <div id="summary" class="summary"></div>
+    </div>
+
+    <h2>Test Case 1: Basic Textarea</h2>
+    <div class="source-code">Comments: [[Your thoughts...]]</div>
+    <div id="test1" class="test-container"></div>
+
+    <h2>Test Case 2: Required Textarea</h2>
+    <div class="source-code">Feedback*: [[Required feedback]]</div>
+    <div id="test2" class="test-container"></div>
+
+    <h2>Test Case 3: Empty Placeholder</h2>
+    <div class="source-code">Notes: [[]]</div>
+    <div id="test3" class="test-container"></div>
+
+    <h2>Test Case 4: Special Characters in Label</h2>
+    <div class="source-code">Your "Message": [[Type here]]</div>
+    <div id="test4" class="test-container"></div>
+
+    <h2>Test Case 5: Textarea with Bold Label</h2>
+    <div class="source-code">**Important** Notes*: [[Enter notes...]]</div>
+    <div id="test5" class="test-container"></div>
+
+    <h2>Test Case 6: Multiple Textareas</h2>
+    <div class="source-code">Bio: [[Tell us about yourself...]]
+Description*: [[Describe your project...]]</div>
+    <div id="test6" class="test-container"></div>
+
+    <!-- Load WTF Script modules -->
+    <script src="../src/helpers.js"></script>
+    <script src="../src/rules.js"></script>
+    <script src="../src/syntax.js"></script>
+    <script>
+        const results = [];
+        let engine;
+
+        try {
+            engine = new WTFScriptEngine(syntaxRules);
+        } catch (e) {
+            console.error('Failed to load engine:', e);
+            document.getElementById('results-list').innerHTML =
+                `<div class="fail">Engine failed to load: ${e.message}</div>`;
+        }
+
+        function runTest(name, input, assertions) {
+            try {
+                const output = engine.parse(input);
+
+                for (const assertion of assertions) {
+                    const passed = assertion.test(output);
+                    results.push({
+                        name: `${name}: ${assertion.desc}`,
+                        passed,
+                        error: passed ? null : `Expected: ${assertion.desc}`
+                    });
+                }
+
+                return output;
+            } catch (e) {
+                results.push({
+                    name,
+                    passed: false,
+                    error: e.message
+                });
+                return `<div class="error">${e.message}</div>`;
+            }
+        }
+
+        // Test 1: Basic Textarea
+        const output1 = runTest('Test 1: Basic', 'Comments: [[Your thoughts...]]', [
+            { desc: 'Contains textarea element', test: (o) => o.includes('<textarea') },
+            { desc: 'Has correct placeholder', test: (o) => o.includes('placeholder="Your thoughts..."') },
+            { desc: 'Has correct name/id', test: (o) => o.includes('name="comments"') && o.includes('id="comments"') },
+            { desc: 'Has label', test: (o) => o.includes('<label for="comments">Comments</label>') },
+            { desc: 'No required attribute', test: (o) => !o.includes('required') }
+        ]);
+        document.getElementById('test1').innerHTML = output1;
+
+        // Test 2: Required Textarea
+        const output2 = runTest('Test 2: Required', 'Feedback*: [[Required feedback]]', [
+            { desc: 'Contains textarea element', test: (o) => o.includes('<textarea') },
+            { desc: 'Has required attribute', test: (o) => o.includes('required') },
+            { desc: 'Has required star', test: (o) => o.includes('req-star') },
+            { desc: 'Has correct placeholder', test: (o) => o.includes('placeholder="Required feedback"') }
+        ]);
+        document.getElementById('test2').innerHTML = output2;
+
+        // Test 3: Empty Placeholder
+        const output3 = runTest('Test 3: Empty Placeholder', 'Notes: [[]]', [
+            { desc: 'Contains textarea element', test: (o) => o.includes('<textarea') },
+            { desc: 'Has empty placeholder', test: (o) => o.includes('placeholder=""') },
+            { desc: 'Has correct name', test: (o) => o.includes('name="notes"') }
+        ]);
+        document.getElementById('test3').innerHTML = output3;
+
+        // Test 4: Special Characters in Label
+        const output4 = runTest('Test 4: Special Chars', 'Your "Message": [[Type here]]', [
+            { desc: 'Contains textarea element', test: (o) => o.includes('<textarea') },
+            { desc: 'Label rendered correctly', test: (o) => o.includes('Your "Message"') },
+            { desc: 'Has placeholder', test: (o) => o.includes('placeholder="Type here"') }
+        ]);
+        document.getElementById('test4').innerHTML = output4;
+
+        // Test 5: Textarea with Bold Label
+        const output5 = runTest('Test 5: Bold Label', '**Important** Notes*: [[Enter notes...]]', [
+            { desc: 'Contains textarea element', test: (o) => o.includes('<textarea') },
+            { desc: 'Bold text rendered', test: (o) => o.includes('<strong>Important</strong>') },
+            { desc: 'Has required', test: (o) => o.includes('required') }
+        ]);
+        document.getElementById('test5').innerHTML = output5;
+
+        // Test 6: Multiple Textareas
+        const output6 = runTest('Test 6: Multiple', `Bio: [[Tell us about yourself...]]
+Description*: [[Describe your project...]]`, [
+            { desc: 'Contains two textareas', test: (o) => (o.match(/<textarea/g) || []).length === 2 },
+            { desc: 'Has bio field', test: (o) => o.includes('name="bio"') },
+            { desc: 'Has description field', test: (o) => o.includes('name="description"') },
+            { desc: 'Description is required', test: (o) => o.includes('name="description"') && o.includes('required') }
+        ]);
+        document.getElementById('test6').innerHTML = output6;
+
+        // Display results
+        const resultsHtml = results.map(r =>
+            `<div class="${r.passed ? 'pass' : 'fail'}">
+                ${r.passed ? '✅' : '❌'} ${r.name}
+                ${r.error && !r.passed ? `<small>${r.error}</small>` : ''}
+            </div>`
+        ).join('');
+
+        document.getElementById('results-list').innerHTML = resultsHtml;
+
+        // Summary
+        const passed = results.filter(r => r.passed).length;
+        const total = results.length;
+        const allPassed = passed === total;
+
+        document.getElementById('summary').innerHTML =
+            `${passed}/${total} tests passed`;
+        document.getElementById('summary').className =
+            `summary ${allPassed ? 'all-pass' : 'has-fail'}`;
+
+        // Console summary
+        console.log(`\n=== TEXTAREA TEST RESULTS: ${passed}/${total} passed ===\n`);
+        results.forEach(r => console.log(r.passed ? `✅ ${r.name}` : `❌ ${r.name}: ${r.error || 'FAILED'}`));
+    </script>
+</body>
+</html>
