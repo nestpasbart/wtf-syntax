@@ -77,8 +77,8 @@ class WTFScriptEngine {
             groupOpen: false // Track if we have an open form-group div
         };
 
-        // We enable browser validation
-        let output = `<form action="#" method="POST" onsubmit="event.preventDefault(); alert('Form Validated!');">\n`;
+        // Form tag - validation handled by wtf-validation.js
+        let output = `<form action="#" method="POST">\n`;
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();

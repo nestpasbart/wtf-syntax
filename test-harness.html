@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTF Script Test Harness</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        .panel-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .panel-content {
+            flex: 1;
+            overflow: auto;
+            min-height: 0;
+        }
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: #0f0f23;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #eee;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            padding: 12px;
+            resize: none;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+        .rendered-form {
+            background: #fff;
+            border-radius: 4px;
+            padding: 20px;
+            color: #333;
+            height: 100%;
+            overflow: auto;
+        }
+        .rendered-form form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .rendered-form input[type="text"],
+        .rendered-form input[type="email"],
+        .rendered-form input[type="password"],
+        .rendered-form input[type="date"],
+        .rendered-form input[type="number"],
+        .rendered-form input[type="tel"],
+        .rendered-form input[type="url"],
+        .rendered-form select,
+        .rendered-form textarea {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .rendered-form button {
+            padding: 10px 20px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .rendered-form label {
+            font-weight: 500;
+        }
+        pre {
+            background: #0f0f23;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            overflow: auto;
+            height: 100%;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            background: #3d1a1a;
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .status {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .status.ok { background: #1a3d1a; color: #6bff6b; }
+        .status.error { background: #3d1a1a; color: #ff6b6b; }
+        .copy-btn {
+            background: #333;
+            border: none;
+            color: #888;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .copy-btn:hover { background: #444; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>🧪 WTF Script Test Harness</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">WTF Script Input</span>
+                <span class="status" id="parseStatus">Loading...</span>
+            </div>
+            <div class="panel-content">
+                <textarea id="input" placeholder="Type your WTF Script here...">---
+title: Test Form
+---
+
+# Contact Us
+
+Name*: [Your name]
+Email*: [you@example.com]
+
+Department: {Sales, *Support, Engineering}
+
+Message*:
+- [ ] Subscribe to newsletter
+- [x] I agree to the terms
+
+[Send Message]</textarea>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Rendered Form</span>
+            </div>
+            <div class="panel-content">
+                <div class="rendered-form" id="rendered"></div>
+            </div>
+        </div>
+        
+        <div class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-header">
+                <span class="panel-title">HTML Output</span>
+                <button class="copy-btn" onclick="copyHTML()">Copy HTML</button>
+            </div>
+            <div class="panel-content">
+                <pre id="htmlOutput"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="./src/helpers.js"></script>
+    <script src="./src/rules.js"></script>
+    <script src="./src/syntax.js"></script>
+    <script src="./src/wtf-validation.js"></script>
+    <script>
+        const input = document.getElementById('input');
+        const rendered = document.getElementById('rendered');
+        const htmlOutput = document.getElementById('htmlOutput');
+        const parseStatus = document.getElementById('parseStatus');
+        
+        let engine;
+        
+        try {
+            engine = new WTFScriptEngine(syntaxRules);
+            parseStatus.textContent = 'Ready';
+            parseStatus.className = 'status ok';
+        } catch (e) {
+            parseStatus.textContent = 'Load Error';
+            parseStatus.className = 'status error';
+            console.error('Failed to load WTFScriptEngine:', e);
+        }
+        
+        function update() {
+            if (!engine) return;
+            
+            try {
+                const result = engine.parse(input.value);
+                rendered.innerHTML = result;
+                htmlOutput.textContent = formatHTML(result);
+                parseStatus.textContent = 'OK';
+                parseStatus.className = 'status ok';
+            } catch (e) {
+                rendered.innerHTML = `<div class="error">${e.message}</div>`;
+                htmlOutput.textContent = e.stack || e.message;
+                parseStatus.textContent = 'Parse Error';
+                parseStatus.className = 'status error';
+            }
+        }
+        
+        function formatHTML(html) {
+            // Simple formatting for readability
+            return html
+                .replace(/></g, '>\n<')
+                .replace(/\n\n+/g, '\n')
+                .trim();
+        }
+        
+        window.copyHTML = function() {
+            navigator.clipboard.writeText(htmlOutput.textContent);
+        }
+        
+        input.addEventListener('input', update);
+        update();
+    </script>
+</body>
+</html>
