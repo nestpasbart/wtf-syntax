@@ -164,6 +164,101 @@
         return null;
     }
 
+    // Validate all fields in a step container
+    function validateStep(step, form) {
+        let hasErrors = false;
+
+        // Validate regular fields
+        const fields = step.querySelectorAll('input, select, textarea');
+        fields.forEach(field => {
+            const errors = validateField(field, form);
+            showError(field, errors);
+            if (errors.length > 0) hasErrors = true;
+        });
+
+        // Validate checkbox groups
+        const groups = step.querySelectorAll('.checkbox-group[data-min-select], .checkbox-group[data-max-select]');
+        groups.forEach(group => {
+            const error = validateCheckboxGroup(group);
+            showGroupError(group, error);
+            if (error) hasErrors = true;
+        });
+
+        return !hasErrors;
+    }
+
+    // Initialize multi-step form navigation
+    function initMultiStep(form) {
+        const steps = form.querySelectorAll('.wtf-step');
+        const progress = form.querySelector('.wtf-progress');
+        let currentStep = 0;
+
+        // Build progress indicator (progress bar)
+        if (progress && steps.length > 0) {
+            const percent = (1 / steps.length) * 100;
+            let progressHTML = '<div class="wtf-progress-bar">';
+            progressHTML += `<div class="wtf-progress-fill" style="width: ${percent}%"></div>`;
+            progressHTML += '</div>';
+            progress.innerHTML = progressHTML;
+        }
+
+        function goToStep(index) {
+            if (index < 0 || index >= steps.length) return;
+
+            steps.forEach((step, i) => {
+                step.classList.toggle('active', i === index);
+            });
+
+            // Update progress bar
+            if (progress) {
+                const fill = progress.querySelector('.wtf-progress-fill');
+                if (fill) {
+                    const percent = ((index + 1) / steps.length) * 100;
+                    fill.style.width = `${percent}%`;
+                }
+            }
+
+            currentStep = index;
+            form.dataset.step = index;
+
+            // Scroll to top of form
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Add click handlers for navigation buttons
+        form.addEventListener('click', (e) => {
+            if (e.target.classList.contains('wtf-next')) {
+                e.preventDefault();
+                // Validate current step before proceeding
+                const currentStepEl = steps[currentStep];
+                if (validateStep(currentStepEl, form)) {
+                    goToStep(currentStep + 1);
+                } else {
+                    // Focus first invalid field
+                    const firstInvalid = currentStepEl.querySelector('.wtf-invalid');
+                    if (firstInvalid) firstInvalid.focus();
+                }
+            } else if (e.target.classList.contains('wtf-prev')) {
+                e.preventDefault();
+                goToStep(currentStep - 1);
+            }
+        });
+
+        // Allow clicking on progress dots to navigate (only to completed steps)
+        if (progress) {
+            progress.addEventListener('click', (e) => {
+                const dot = e.target.closest('.wtf-progress-dot');
+                if (dot) {
+                    const targetStep = parseInt(dot.dataset.step);
+                    // Only allow going back, not forward
+                    if (targetStep < currentStep) {
+                        goToStep(targetStep);
+                    }
+                }
+            });
+        }
+    }
+
     // Initialize validation on a form
     function initValidation(form) {
         // Prevent double-initialization
@@ -201,6 +296,11 @@
 
         // Handle "Other" option toggles
         initOtherOptions(form);
+
+        // Initialize multi-step form navigation
+        if (form.classList.contains('wtf-multistep')) {
+            initMultiStep(form);
+        }
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();

@@ -240,6 +240,67 @@
         .rendered-form .other-option .other-input:not(:disabled) {
             background: #fff;
         }
+        /* Multi-step form styles */
+        .rendered-form .wtf-multistep .wtf-step {
+            display: none;
+        }
+        .rendered-form .wtf-multistep .wtf-step.active {
+            display: block;
+        }
+        .rendered-form .wtf-step-title {
+            margin: 0 0 16px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+        .rendered-form .wtf-step-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+        .rendered-form .wtf-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .rendered-form .wtf-prev {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .rendered-form .wtf-prev:hover {
+            background: #d0d0d0;
+        }
+        .rendered-form .wtf-next,
+        .rendered-form .wtf-submit {
+            background: #4a9eff;
+            color: white;
+        }
+        .rendered-form .wtf-next:hover,
+        .rendered-form .wtf-submit:hover {
+            background: #3a8eef;
+        }
+        /* Progress bar */
+        .rendered-form .wtf-progress {
+            margin-bottom: 20px;
+        }
+        .rendered-form .wtf-progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .rendered-form .wtf-progress-fill {
+            height: 100%;
+            background: #4a9eff;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
         pre {
             background: #0f0f23;
             border-radius: 4px;
@@ -289,28 +350,29 @@
             </div>
             <div class="panel-content">
                 <textarea id="input" placeholder="Type your WTF Script here...">---
-title: Test Form
+title: Multi-Step Form Demo
 ---
 
-# Contact Us
+=== Step 1: Personal Info ===
 
 Name*: [Your name]
 Email*: [you@example.com]
-Password*: [***] ~min:8|"Password must be at least 8 characters"
+
+=== Step 2: Preferences ===
 
 Department: {Sales, *Support, Engineering}
 
 How did you hear about us:
 - [ ] Google
 - [ ] Social Media
-- [ ] Friend referral
 - [?] Other [Please specify]
 
-Message*:
-- [ ] Subscribe to newsletter
-- [x] I agree to the terms
+=== Step 3: Confirm ===
 
-[Send Message]</textarea>
+Comments: [[Any additional comments?]]
+
+- [ ] Subscribe to newsletter
+- [x] I agree to the terms</textarea>
             </div>
         </div>
 

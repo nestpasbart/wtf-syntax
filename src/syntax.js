@@ -74,11 +74,33 @@ class WTFScriptEngine {
             group: null,
             hasRequired: false,
             usedNames: {}, // Track used field names to prevent duplicates
-            groupOpen: false // Track if we have an open form-group div
+            groupOpen: false, // Track if we have an open form-group div
+            steps: [], // Track step titles for multi-step forms
+            currentStep: 0, // Current step index
+            isMultiStep: false // Whether this is a multi-step form
         };
 
+        // First pass: detect if this is a multi-step form
+        const stepRegex = /^===\s*(.+?)\s*===$/;
+        for (const line of lines) {
+            if (stepRegex.test(line.trim())) {
+                context.isMultiStep = true;
+                break;
+            }
+        }
+
         // Form tag - validation handled by wtf-validation.js
-        let output = `<form action="#" method="POST">\n`;
+        let output = context.isMultiStep
+            ? `<form action="#" method="POST" class="wtf-multistep" data-step="0">\n`
+            : `<form action="#" method="POST">\n`;
+
+        // Add progress indicator for multi-step forms (will be populated by JS)
+        if (context.isMultiStep) {
+            output += `<div class="wtf-progress"></div>\n`;
+        }
+
+        let stepContent = '';
+        let stepOpen = false;
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i].trim();
@@ -86,10 +108,41 @@ class WTFScriptEngine {
             // Skip empty lines
             if (!line) continue;
 
+            // Check for step header
+            const stepMatch = line.match(stepRegex);
+            if (stepMatch && context.isMultiStep) {
+                // Close previous step if open
+                if (stepOpen) {
+                    // Close any open group
+                    if (context.groupOpen) {
+                        stepContent += `</div>\n`;
+                        context.groupOpen = false;
+                    }
+                    // Add navigation buttons
+                    stepContent += this.renderStepNav(context.currentStep, context.steps.length);
+                    output += stepContent + `</div>\n`;
+                }
+
+                // Start new step
+                const stepTitle = stepMatch[1].trim();
+                context.steps.push(stepTitle);
+                context.currentStep = context.steps.length - 1;
+                const activeClass = context.currentStep === 0 ? ' active' : '';
+                output += `<div class="wtf-step${activeClass}" data-step-index="${context.currentStep}">\n`;
+                output += `<h3 class="wtf-step-title">${stepTitle}</h3>\n`;
+                stepContent = '';
+                stepOpen = true;
+                continue;
+            }
+
             // Check if we need to close a group (when line is not a radio/checkbox item)
             const isRadioOrCheckbox = /^-\s[\[\(]/.test(line);
             if (context.groupOpen && !isRadioOrCheckbox) {
-                output += `</div>\n`;
+                if (context.isMultiStep && stepOpen) {
+                    stepContent += `</div>\n`;
+                } else {
+                    output += `</div>\n`;
+                }
                 context.groupOpen = false;
             }
 
@@ -98,7 +151,12 @@ class WTFScriptEngine {
                 const match = line.match(rule.regex);
                 if (match) {
                     // Pass match AND context to the render function
-                    output += rule.render(match, context) + '\n';
+                    const rendered = rule.render(match, context) + '\n';
+                    if (context.isMultiStep && stepOpen) {
+                        stepContent += rendered;
+                    } else {
+                        output += rendered;
+                    }
                     break; // Stop looking for rules for this line
                 }
             }
@@ -106,7 +164,25 @@ class WTFScriptEngine {
 
         // Close any open group at the end
         if (context.groupOpen) {
-            output += `</div>\n`;
+            if (context.isMultiStep && stepOpen) {
+                stepContent += `</div>\n`;
+            } else {
+                output += `</div>\n`;
+            }
+        }
+
+        // Close last step if multi-step
+        if (context.isMultiStep && stepOpen) {
+            stepContent += this.renderStepNav(context.currentStep, context.steps.length, true);
+            output += stepContent + `</div>\n`;
+        }
+
+        // Update progress indicator with step count
+        if (context.isMultiStep) {
+            output = output.replace(
+                '<div class="wtf-progress"></div>',
+                `<div class="wtf-progress" data-total-steps="${context.steps.length}"></div>`
+            );
         }
 
         output += `</form>`;
@@ -117,5 +193,25 @@ class WTFScriptEngine {
         }
 
         return output;
+    }
+
+    /**
+     * Render navigation buttons for a step
+     */
+    renderStepNav(stepIndex, totalSteps, isLast = false) {
+        let nav = '<div class="wtf-step-nav">';
+
+        if (stepIndex > 0) {
+            nav += '<button type="button" class="wtf-btn wtf-prev">\u2039 Previous</button>';
+        }
+
+        if (isLast) {
+            nav += '<button type="submit" class="wtf-btn wtf-submit">Submit</button>';
+        } else {
+            nav += '<button type="button" class="wtf-btn wtf-next">Next \u203a</button>';
+        }
+
+        nav += '</div>';
+        return nav;
     }
 }
