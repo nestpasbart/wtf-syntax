@@ -92,13 +92,14 @@ const syntaxRules = [
         }
     },
 
-    // 6. Text Inputs - Label: [Placeholder]
+    // 6. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
     {
         name: 'Input',
-        regex: /(.*):\s\[(.*)\]/,
+        regex: /(.*):\s\[(.*?)\](.*)$/,
         render: (match, context) => {
             const rawLabel = match[1];
             const placeholder = match[2];
+            const validatorString = match[3]?.trim() || '';
 
             const { label, isReq } = parseLabel(rawLabel);
             const baseSlug = slugify(label);
@@ -110,13 +111,40 @@ const syntaxRules = [
             if (placeholder.includes('***') || name.includes('password')) type = 'password';
             else if (placeholder === 'date') type = 'date';
             else if (placeholder.includes('@') || name.includes('email')) type = 'email';
+            else if (baseSlug.includes('phone') || baseSlug.includes('tel')) type = 'tel';
+            else if (placeholder.startsWith('http') || baseSlug.includes('website') || baseSlug.includes('url')) type = 'url';
+
+            // Parse validation rules like ~min:8|"Must be 8 chars" ~max:20
+            let dataValidate = '';
+            if (validatorString) {
+                const validators = [];
+                const validatorRegex = /~(\w+)(?::([^|~\s]+))?(?:\|"([^"]+)")?/g;
+                let vMatch;
+                while ((vMatch = validatorRegex.exec(validatorString)) !== null) {
+                    const vName = vMatch[1];
+                    const vParam = vMatch[2] || '';
+                    const vMsg = vMatch[3] || '';
+
+                    let rule = vName;
+                    if (vParam) rule += ':' + vParam;
+                    if (vMsg) rule += '|' + vMsg;
+                    validators.push(rule);
+                }
+                if (validators.length > 0) {
+                    dataValidate = ` data-validate="${validators.join(';')}"`;
+                }
+            }
 
             context.group = null;
+
+            const placeholderAttr = (type !== 'date' && placeholder)
+                ? ` placeholder="${placeholder}"`
+                : '';
 
             return `
             <div class="form-group">
                 <label for="${name}">${parseInline(label)}${isReq ? '<span class="req-star">*</span>' : ''}</label>
-                <input type="${type}" name="${name}" id="${name}" placeholder="${placeholder}" ${isReq ? 'required' : ''}>
+                <input type="${type}" name="${name}" id="${name}"${placeholderAttr}${isReq ? ' required' : ''}${dataValidate}>
             </div>`;
         }
     },
