@@ -137,6 +137,69 @@
         .rendered-form .wtf-invalid {
             border-color: #e53935 !important;
         }
+        /* Scale/Rating field styles - Typeform style */
+        .rendered-form .scale-field .scale-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .rendered-form .scale-field .scale-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .rendered-form .scale-field .scale-option {
+            cursor: pointer;
+            flex: 1;
+        }
+        .rendered-form .scale-field .scale-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .rendered-form .scale-field .scale-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 44px;
+            height: 44px;
+            padding: 0 12px;
+            border: 2px solid #c5d4e8;
+            border-radius: 6px;
+            background: #f0f5fa;
+            color: #3b5998;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+        .rendered-form .scale-field .scale-option:hover .scale-btn {
+            border-color: #3b5998;
+            background: #e8f0fa;
+        }
+        .rendered-form .scale-field .scale-option input:checked + .scale-btn {
+            border-color: #3b5998;
+            background: #3b5998;
+            color: #fff;
+        }
+        .rendered-form .scale-field .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+        .rendered-form .scale-field .scale-label {
+            font-size: 0.8rem;
+            color: #3b5998;
+            white-space: nowrap;
+        }
+        .rendered-form .scale-field .scale-label.mid {
+            text-align: center;
+        }
+        .rendered-form .scale-field .scale-label.end {
+            text-align: right;
+        }
         pre {
             background: #0f0f23;
             border-radius: 4px;

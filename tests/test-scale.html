@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WTF Script Test: Scale (Rating/Likert)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 { margin: 0 0 20px 0; color: #1a1a2e; }
+        h2 { margin: 20px 0 10px 0; font-size: 1.1rem; color: #444; }
+        #test-results {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pass { color: #2e7d32; padding: 8px; margin: 4px 0; background: #e8f5e9; border-radius: 4px; }
+        .fail { color: #c62828; padding: 8px; margin: 4px 0; background: #ffebee; border-radius: 4px; }
+        .fail small { display: block; margin-top: 4px; color: #666; }
+        .test-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-container form { display: flex; flex-direction: column; gap: 12px; }
+        .test-container .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .test-container label { font-weight: 500; }
+        .test-container .req-star { color: #e53935; margin-left: 2px; }
+        .source-code {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        .summary { font-size: 1.2rem; font-weight: bold; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .summary.all-pass { background: #e8f5e9; color: #2e7d32; }
+        .summary.has-fail { background: #ffebee; color: #c62828; }
+        /* Scale styles - Typeform style */
+        .scale-field .scale-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .scale-field .scale-options { display: flex; justify-content: space-between; gap: 0.5rem; width: 100%; }
+        .scale-field .scale-option { cursor: pointer; flex: 1; }
+        .scale-field .scale-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .scale-field .scale-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 44px;
+            height: 44px;
+            padding: 0 12px;
+            border: 2px solid #c5d4e8;
+            border-radius: 6px;
+            background: #f0f5fa;
+            color: #3b5998;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+        .scale-field .scale-option:hover .scale-btn {
+            border-color: #3b5998;
+            background: #e8f0fa;
+        }
+        .scale-field .scale-option input:checked + .scale-btn {
+            border-color: #3b5998;
+            background: #3b5998;
+            color: #fff;
+        }
+        .scale-field .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+        .scale-field .scale-label {
+            font-size: 0.8rem;
+            color: #3b5998;
+            white-space: nowrap;
+        }
+        .scale-field .scale-label.mid { text-align: center; }
+        .scale-field .scale-label.end { text-align: right; }
+    </style>
+</head>
+<body>
+    <h1>Testing: Scale (Rating/Likert)</h1>
+
+    <div id="test-results">
+        <strong>Test Results:</strong>
+        <div id="results-list"></div>
+        <div id="summary" class="summary"></div>
+    </div>
+
+    <h2>Test Case 1: Basic 1-5 Scale (2 labels)</h2>
+    <div class="source-code">Satisfaction: |1-5| Very unsatisfied | Very satisfied</div>
+    <div id="test1" class="test-container"></div>
+
+    <h2>Test Case 2: 0-10 Scale with 3 Labels</h2>
+    <div class="source-code">Recall: |0-10| Do not recall | Somewhat recall | Very memorable</div>
+    <div id="test2" class="test-container"></div>
+
+    <h2>Test Case 3: Required Scale</h2>
+    <div class="source-code">Rating*: |1-5| Poor | Excellent</div>
+    <div id="test3" class="test-container"></div>
+
+    <h2>Test Case 4: 0-5 Scale with 3 Labels</h2>
+    <div class="source-code">Experience: |0-5| Terrible | Okay | Amazing</div>
+    <div id="test4" class="test-container"></div>
+
+    <h2>Test Case 5: Multiple Scales</h2>
+    <div class="source-code">Quality*: |1-5| Bad | Great
+Service: |0-10| Poor | Average | Excellent</div>
+    <div id="test5" class="test-container"></div>
+
+    <!-- Load WTF Script modules -->
+    <script src="../src/helpers.js"></script>
+    <script src="../src/rules.js"></script>
+    <script src="../src/syntax.js"></script>
+    <script>
+        const results = [];
+        let engine;
+
+        try {
+            engine = new WTFScriptEngine(syntaxRules);
+        } catch (e) {
+            console.error('Failed to load engine:', e);
+            document.getElementById('results-list').innerHTML =
+                `<div class="fail">Engine failed to load: ${e.message}</div>`;
+        }
+
+        function runTest(name, input, assertions) {
+            try {
+                const output = engine.parse(input);
+                for (const assertion of assertions) {
+                    const passed = assertion.test(output);
+                    results.push({
+                        name: `${name}: ${assertion.desc}`,
+                        passed,
+                        error: passed ? null : `Expected: ${assertion.desc}`
+                    });
+                }
+                return output;
+            } catch (e) {
+                results.push({ name, passed: false, error: e.message });
+                return `<div class="error">${e.message}</div>`;
+            }
+        }
+
+        // Test 1: Basic 1-5 Scale (2 labels)
+        const output1 = runTest('Test 1: Basic 2 labels', 'Satisfaction: |1-5| Very unsatisfied | Very satisfied', [
+            { desc: 'Contains scale-field class', test: (o) => o.includes('scale-field') },
+            { desc: 'Has 5 radio inputs', test: (o) => (o.match(/<input type="radio"/g) || []).length === 5 },
+            { desc: 'Has start label', test: (o) => o.includes('Very unsatisfied') },
+            { desc: 'Has end label', test: (o) => o.includes('Very satisfied') },
+            { desc: 'Has scale-btn elements', test: (o) => o.includes('scale-btn') }
+        ]);
+        document.getElementById('test1').innerHTML = output1;
+
+        // Test 2: 0-10 Scale with 3 labels
+        const output2 = runTest('Test 2: 3 labels', 'Recall: |0-10| Do not recall | Somewhat recall | Very memorable', [
+            { desc: 'Has 11 radio inputs (0-10)', test: (o) => (o.match(/<input type="radio"/g) || []).length === 11 },
+            { desc: 'Has start label', test: (o) => o.includes('Do not recall') },
+            { desc: 'Has middle label', test: (o) => o.includes('Somewhat recall') },
+            { desc: 'Has end label', test: (o) => o.includes('Very memorable') },
+            { desc: 'Has mid class for middle label', test: (o) => o.includes('scale-label mid') }
+        ]);
+        document.getElementById('test2').innerHTML = output2;
+
+        // Test 3: Required Scale
+        const output3 = runTest('Test 3: Required', 'Rating*: |1-5| Poor | Excellent', [
+            { desc: 'Has required attribute', test: (o) => o.includes('required') },
+            { desc: 'Has required star', test: (o) => o.includes('req-star') },
+            { desc: 'Has 5 radio inputs', test: (o) => (o.match(/<input type="radio"/g) || []).length === 5 }
+        ]);
+        document.getElementById('test3').innerHTML = output3;
+
+        // Test 4: 0-5 Scale with 3 labels
+        const output4 = runTest('Test 4: 0-5 with 3 labels', 'Experience: |0-5| Terrible | Okay | Amazing', [
+            { desc: 'Has 6 radio inputs (0-5)', test: (o) => (o.match(/<input type="radio"/g) || []).length === 6 },
+            { desc: 'Has all three labels', test: (o) =>
+                o.includes('Terrible') && o.includes('Okay') && o.includes('Amazing') }
+        ]);
+        document.getElementById('test4').innerHTML = output4;
+
+        // Test 5: Multiple Scales
+        const output5 = runTest('Test 5: Multiple', `Quality*: |1-5| Bad | Great
+Service: |0-10| Poor | Average | Excellent`, [
+            { desc: 'Has 16 radio inputs total (5+11)', test: (o) => (o.match(/<input type="radio"/g) || []).length === 16 },
+            { desc: 'Has quality field', test: (o) => o.includes('name="quality"') },
+            { desc: 'Has service field', test: (o) => o.includes('name="service"') },
+            { desc: 'Quality is required', test: (o) => o.includes('name="quality"') && o.includes('required') }
+        ]);
+        document.getElementById('test5').innerHTML = output5;
+
+        // Display results
+        const resultsHtml = results.map(r =>
+            `<div class="${r.passed ? 'pass' : 'fail'}">
+                ${r.passed ? '✅' : '❌'} ${r.name}
+                ${r.error && !r.passed ? `<small>${r.error}</small>` : ''}
+            </div>`
+        ).join('');
+        document.getElementById('results-list').innerHTML = resultsHtml;
+
+        // Summary
+        const passed = results.filter(r => r.passed).length;
+        const total = results.length;
+        document.getElementById('summary').innerHTML = `${passed}/${total} tests passed`;
+        document.getElementById('summary').className = `summary ${passed === total ? 'all-pass' : 'has-fail'}`;
+
+        // Console summary
+        console.log(`\n=== SCALE TEST RESULTS: ${passed}/${total} passed ===\n`);
+        results.forEach(r => console.log(r.passed ? `✅ ${r.name}` : `❌ ${r.name}: ${r.error || 'FAILED'}`));
+    </script>
+</body>
+</html>

@@ -114,7 +114,56 @@ const syntaxRules = [
         }
     },
 
-    // 7. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
+    // 7. Scale Question (Rating/Likert) - Label: |0-10| Start | Middle | End
+    {
+        name: 'Scale',
+        regex: /(.*):\s*\|(\d+)-(\d+)\|\s*(.*)/,
+        render: (match, context) => {
+            const { label, isReq } = parseLabel(match[1].trim());
+            const min = parseInt(match[2]);
+            const max = parseInt(match[3]);
+            const labelsString = match[4].trim();
+
+            // Parse labels (2 or 3 labels separated by |)
+            const labels = labelsString.split('|').map(l => l.trim());
+            const startLabel = labels[0] || '';
+            const midLabel = labels.length === 3 ? labels[1] : '';
+            const endLabel = labels[labels.length - 1] || '';
+
+            const name = getUniqueName(slugify(label), context);
+            if (isReq) context.hasRequired = true;
+            const reqStar = isReq ? '<span class="req-star">*</span>' : '';
+
+            let options = '';
+            for (let i = min; i <= max; i++) {
+                const reqAttr = (isReq && i === min) ? ' required' : '';
+                options += `<label class="scale-option">
+                    <input type="radio" name="${name}" value="${i}"${reqAttr}>
+                    <span class="scale-btn">${i}</span>
+                </label>`;
+            }
+
+            context.group = null;
+
+            // Build labels row
+            let labelsHtml = `<span class="scale-label start">${startLabel}</span>`;
+            if (midLabel) {
+                labelsHtml += `<span class="scale-label mid">${midLabel}</span>`;
+            }
+            labelsHtml += `<span class="scale-label end">${endLabel}</span>`;
+
+            return `
+            <div class="form-group scale-field">
+                <label>${parseInline(label)}${reqStar}</label>
+                <div class="scale-container">
+                    <div class="scale-options">${options}</div>
+                    <div class="scale-labels">${labelsHtml}</div>
+                </div>
+            </div>`;
+        }
+    },
+
+    // 8. Text Inputs with Validation - Label: [Placeholder] ~min:8|"Custom msg"
     {
         name: 'Input',
         regex: /(.*):\s\[(.*?)\](.*)$/,
@@ -171,7 +220,7 @@ const syntaxRules = [
         }
     },
 
-    // 8. Group Headers - Label: (Used for grouping radios)
+    // 9. Group Headers - Label: (Used for grouping radios)
     {
         name: 'GroupHeader',
         regex: /(.*):$/, // Matches "Gender:" or "Pick One:"
@@ -199,21 +248,21 @@ const syntaxRules = [
         }
     },
 
-    // 9. Standard Lists - Item
+    // 10. Standard Lists - Item
     {
         name: 'List',
         regex: /^-\s(.*)/,
         render: (match) => `<li>${parseInline(match[1])}</li>`
     },
 
-    // 10. Divider line
+    // 11. Divider line
     {
         name: 'Divide',
         regex: /^-{3,}$/,
         render: (match) => `<p class="dividerline"></p>`
     },
 
-    // 11. Link Line (Custom Syntax)
+    // 12. Link Line (Custom Syntax)
     {
         name: 'Link',
         // Matches: Text + space + <"url">
