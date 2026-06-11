@@ -12,15 +12,26 @@ class WTFScriptEngine {
     }
 
     /**
+     * Inject a data-wtf-line attribute (the source line in the original markdown)
+     * into the first HTML tag of a rendered chunk. Used by editors to map a caret
+     * position back to the element it produced. Safe no-op if no tag is found.
+     */
+    tagLine(html, line) {
+        if (line == null) return html;
+        return html.replace(/^(\s*<[a-zA-Z][\w-]*)(\s|>|\/)/, `$1 data-wtf-line="${line}"$2`);
+    }
+
+    /**
      * Extract frontmatter from markdown content
-     * Returns { metadata, content }
+     * Returns { metadata, content, offset } where offset is the number of source
+     * lines consumed by the frontmatter (so line numbers can be mapped back).
      */
     extractFrontmatter(markdown) {
         const lines = markdown.split('\n');
 
         // Check if document starts with frontmatter
         if (!lines[0] || lines[0].trim() !== '---') {
-            return { metadata: {}, content: markdown };
+            return { metadata: {}, content: markdown, offset: 0 };
         }
 
         // Find closing ---
@@ -34,7 +45,7 @@ class WTFScriptEngine {
 
         if (endIndex === -1) {
             // No closing ---, treat as regular content
-            return { metadata: {}, content: markdown };
+            return { metadata: {}, content: markdown, offset: 0 };
         }
 
         // Parse frontmatter (simple key: value pairs)
@@ -60,12 +71,12 @@ class WTFScriptEngine {
 
         // Return metadata and content without frontmatter
         const content = lines.slice(endIndex + 1).join('\n');
-        return { metadata, content };
+        return { metadata, content, offset: endIndex + 1 };
     }
 
     parse(markdown) {
         // Extract frontmatter first
-        const { metadata, content } = this.extractFrontmatter(markdown);
+        const { metadata, content, offset = 0 } = this.extractFrontmatter(markdown);
 
         const lines = content.split('\n');
 
@@ -108,6 +119,9 @@ class WTFScriptEngine {
             // Skip empty lines
             if (!line) continue;
 
+            // Source line in the ORIGINAL markdown (incl. frontmatter) for editor mapping
+            const srcLine = i + offset;
+
             // Check for step header
             const stepMatch = line.match(stepRegex);
             if (stepMatch && context.isMultiStep) {
@@ -128,7 +142,7 @@ class WTFScriptEngine {
                 context.steps.push(stepTitle);
                 context.currentStep = context.steps.length - 1;
                 const activeClass = context.currentStep === 0 ? ' active' : '';
-                output += `<div class="wtf-step${activeClass}" data-step-index="${context.currentStep}">\n`;
+                output += `<div class="wtf-step${activeClass}" data-step-index="${context.currentStep}" data-wtf-line="${srcLine}">\n`;
                 // Only render a heading when the marker actually has a title (skip "===  ===")
                 if (stepTitle) {
                     output += `<h3 class="wtf-step-title">${stepTitle}</h3>\n`;
@@ -146,7 +160,7 @@ class WTFScriptEngine {
                 context.steps.push('');
                 context.currentStep = context.steps.length - 1;
                 const implicitActive = context.currentStep === 0 ? ' active' : '';
-                output += `<div class="wtf-step${implicitActive}" data-step-index="${context.currentStep}">\n`;
+                output += `<div class="wtf-step${implicitActive}" data-step-index="${context.currentStep}" data-wtf-line="${srcLine}">\n`;
                 stepContent = '';
                 stepOpen = true;
             }
@@ -167,7 +181,7 @@ class WTFScriptEngine {
                 const match = line.match(rule.regex);
                 if (match) {
                     // Pass match AND context to the render function
-                    const rendered = rule.render(match, context) + '\n';
+                    const rendered = this.tagLine(rule.render(match, context), srcLine) + '\n';
                     if (context.isMultiStep && stepOpen) {
                         stepContent += rendered;
                     } else {
