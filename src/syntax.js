@@ -129,10 +129,26 @@ class WTFScriptEngine {
                 context.currentStep = context.steps.length - 1;
                 const activeClass = context.currentStep === 0 ? ' active' : '';
                 output += `<div class="wtf-step${activeClass}" data-step-index="${context.currentStep}">\n`;
-                output += `<h3 class="wtf-step-title">${stepTitle}</h3>\n`;
+                // Only render a heading when the marker actually has a title (skip "===  ===")
+                if (stepTitle) {
+                    output += `<h3 class="wtf-step-title">${stepTitle}</h3>\n`;
+                }
                 stepContent = '';
                 stepOpen = true;
                 continue;
+            }
+
+            // If this is a multi-step form but content appears before the first
+            // "=== Title ===" marker, auto-open an implicit (untitled) first step.
+            // Without this, that leading content renders outside the step system
+            // and stays permanently visible instead of being paged.
+            if (context.isMultiStep && !stepOpen) {
+                context.steps.push('');
+                context.currentStep = context.steps.length - 1;
+                const implicitActive = context.currentStep === 0 ? ' active' : '';
+                output += `<div class="wtf-step${implicitActive}" data-step-index="${context.currentStep}">\n`;
+                stepContent = '';
+                stepOpen = true;
             }
 
             // Check if we need to close a group (when line is not a radio/checkbox item)
